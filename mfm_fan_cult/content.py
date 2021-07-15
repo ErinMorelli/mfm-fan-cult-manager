@@ -28,8 +28,6 @@ from sqlalchemy.dialects.sqlite import BLOB
 from sqlalchemy import Table, Column, String, DateTime, func
 from sqlalchemy.exc import MultipleResultsFound, NoResultFound
 
-from mfm_fan_cult.content_types import login_user
-
 
 class FanCultContent:
     """Base content class that also provides account access."""
@@ -64,6 +62,19 @@ class FanCultContent:
         self.db = self.manager.get_session()
         self.model = self.manager.models.get(self.model_name)
 
+    def auto_login_user(self, with_account=False):
+        """Decorator to automatically log user in for CLI actions."""
+        def inner(fn):
+            def wrapper(*args, **kwargs):
+                account = self.login_user()
+                if not account:
+                    return
+                if with_account:
+                    kwargs['account'] = account
+                fn(*args, **kwargs)
+            return wrapper
+        return inner
+
     def _get_account(self):
         """Locate an account in the database."""
         model = self.manager.models.get('account')
@@ -84,7 +95,7 @@ class FanCultContent:
                 '\nEnter account number',
                 type=click.Choice(range(len(all_accounts))),
                 show_choices=False,
-                default=0
+                default='0'
             )
             # Use the selected account
             account = all_accounts[user_idx]
@@ -225,13 +236,12 @@ class FanCultContent:
                     self.manager.success('Successfully logged in!')
                 return
             # Attempt to login
-            success = self._make_login_request(username, password)
+            good = self._make_login_request(username, password)
             # If the account was found, confirm password change
-            if success:
-                if click.confirm('Confirm password change for account'):
-                    account.password = self.manager.encode(password)
-                    self.db.commit()
-                    self.manager.success('Successfully updated password!')
+            if good and click.confirm('Confirm password change for account'):
+                account.password = self.manager.encode(password)
+                self.db.commit()
+                self.manager.success('Successfully updated password!')
         return fn
 
     @property
@@ -240,7 +250,7 @@ class FanCultContent:
         @click.command(help='Update account information.')
         @click.option('--download_dir', type=click.Path(exists=True),
                       help='Set path where files will be downloaded.')
-        @login_user(self, with_account=True)
+        @self.auto_login_user(with_account=True)
         def fn(download_dir, account):
             """Update account information."""
             if not download_dir:
@@ -256,7 +266,7 @@ class FanCultContent:
     def show(self):
         """Command to show account info."""
         @click.command(help='Display account information.')
-        @login_user(self, with_account=True)
+        @self.auto_login_user(with_account=True)
         def fn(account):
             """Display account information."""
             form = u'{0:>15}: {1}'
@@ -274,7 +284,6 @@ class FanCultContent:
         @click.group()
         def fn():
             """Base group function for creating the CLI."""
-            return
         # Set the description
         fn.help = self.command_help
         # Add all account commands

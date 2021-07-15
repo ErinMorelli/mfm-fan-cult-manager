@@ -16,13 +16,12 @@ along with this program.  If not, see [https://www.gnu.org/licenses/].
 """
 
 import os
-from dateutil import parser
 from textwrap import shorten
-from urllib.parse import quote
 
 import pytz
 import click
 from tqdm import tqdm
+from dateutil import parser
 from bs4 import BeautifulSoup
 from vimeo_downloader import Vimeo
 from tabulate import tabulate, tabulate_formats
@@ -31,8 +30,6 @@ from sqlalchemy_utils.types import URLType
 from sqlalchemy import Table, Column, DateTime, Integer, String, func
 
 from mfm_fan_cult.content import FanCultContent
-
-from . import login_user
 
 
 class VideoContent(FanCultContent):
@@ -253,7 +250,7 @@ class VideoContent(FanCultContent):
                       help='List any newly added minisodes')
         @click.option('-n', '--number', default=100, show_default=True,
                       help='Number of videos to retrieve from archive')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(number, list_):
             """Updates the the list of videos."""
             new_videos = self._update_videos(number)
@@ -276,7 +273,7 @@ class VideoContent(FanCultContent):
         @click.option('-d', '--dest', type=click.Path(exists=True),
                       help='Folder to download file to.')
         @click.argument('video_id')
-        @login_user(self, with_account=True)
+        @self.auto_login_user(with_account=True)
         def fn(video_id, yes, dest, account):
             """Download a video by ID."""
             video_path = self._get_download_dir(dest, account)
@@ -290,7 +287,7 @@ class VideoContent(FanCultContent):
         """Command to display video details."""
         @click.command(help='Show video details by ID')
         @click.argument('video_id')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(video_id):
             """Show video details by ID."""
             video = self.get_video(video_id)
@@ -313,7 +310,7 @@ class VideoContent(FanCultContent):
         """Command to open video link in a browser."""
         @click.command(help='Open web page for video.')
         @click.argument('video_id')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(video_id):
             """Open web page for video."""
             video = self.get_video(video_id)
@@ -337,7 +334,7 @@ class VideoContent(FanCultContent):
                       help='Filter the list by video type.')
         @click.option('-s', '--search',
                       help='Search videos by title.')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(number, refresh, fmt, type_=None, search=None):
             """Show all available videos."""
             if refresh:
@@ -375,7 +372,7 @@ class VideoContent(FanCultContent):
                       help='Folder to download file to.')
         @click.option('-r', '--refresh', is_flag=True,
                       help='Update list of minisodes.')
-        @login_user(self, with_account=True)
+        @self.auto_login_user(with_account=True)
         def fn(number, print_, dest, refresh, account):
             """Generate a RSS feed of available videos."""
             if refresh:

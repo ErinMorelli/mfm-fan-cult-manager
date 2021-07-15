@@ -33,8 +33,6 @@ from sqlalchemy_utils.types import URLType
 
 from mfm_fan_cult.content import FanCultContent
 
-from . import login_user
-
 
 class MinisodeContent(FanCultContent):
     """Manage Fan Cult minisode content."""
@@ -234,7 +232,7 @@ class MinisodeContent(FanCultContent):
         @click.command(help='Updates the the list of minisodes.')
         @click.option('-l', '--list', 'list_', is_flag=True,
                       help='List any newly added minisodes')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(list_):
             """Updates the the list of minisodes."""
             new_episodes = self._update_episodes()
@@ -257,7 +255,7 @@ class MinisodeContent(FanCultContent):
         @click.option('-d', '--dest', type=click.Path(exists=True),
                       help='Folder to download file to.')
         @click.argument('minisode_id')
-        @login_user(self, with_account=True)
+        @self.auto_login_user(with_account=True)
         def fn(minisode_id, yes, dest, account):
             """Download a minisode by ID."""
             episode_path = self._get_download_dir(dest, account)
@@ -271,7 +269,7 @@ class MinisodeContent(FanCultContent):
         """Command to display minisode details."""
         @click.command(help='Show minisode details by ID.')
         @click.argument('minisode_id')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(minisode_id):
             """Show minisode details by ID."""
             episode = self.get_episode(minisode_id)
@@ -298,7 +296,7 @@ class MinisodeContent(FanCultContent):
         """Command to open minisode link in a browser."""
         @click.command(help='Open web page for minisode.')
         @click.argument('minisode_id')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(minisode_id):
             """Open web page for minisode."""
             episode = self.get_episode(minisode_id)
@@ -320,7 +318,7 @@ class MinisodeContent(FanCultContent):
                       show_default=True, help='How to format the list.')
         @click.option('-s', '--search',
                       help='Search minisodes by title and description.')
-        @login_user(self)
+        @self.auto_login_user()
         def fn(number, refresh, fmt, search):
             """Show all available minisodes."""
             if refresh:
@@ -356,7 +354,7 @@ class MinisodeContent(FanCultContent):
                       help='Folder to download file to.')
         @click.option('-r', '--refresh', is_flag=True,
                       help='Update list of minisodes.')
-        @login_user(self, with_account=True)
+        @self.auto_login_user(with_account=True)
         def fn(print_, dest, refresh, account):
             """Generate a RSS feed of available minisodes."""
             if refresh:

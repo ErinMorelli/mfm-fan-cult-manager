@@ -26,8 +26,7 @@ from sqlalchemy import MetaData, create_engine
 from sqlalchemy.exc import InvalidRequestError
 from sqlalchemy.ext.automap import automap_base
 
-from mfm_fan_cult.content import FanCultContent
-from mfm_fan_cult.content_types import *  # pylint: disable=W0401,W0614
+from mfm_fan_cult.content_types import get_content_types
 
 
 class FanCultManager:
@@ -52,7 +51,7 @@ class FanCultManager:
         # Encryption/decryption cipher handler
         self.__cipher = self.__get_cipher()
         # List of all content type classes
-        self._types = self.inheritors(FanCultContent)
+        self._types = get_content_types()
         # Setup the engine for the sqlite database
         self._engine = create_engine(self.db_uri)
         # Configure the SQLAlchemy metadata
@@ -129,26 +128,12 @@ class FanCultManager:
         """Print error message in red text."""
         click.secho(f'[ERROR] {msg}', fg='red')
 
-    @staticmethod
-    def inheritors(class_):
-        """Generate a list of all subclasses from a base class."""
-        subclasses = {class_}
-        work = [class_]
-        while work:
-            parent = work.pop()
-            for child in parent.__subclasses__():
-                if child not in subclasses:
-                    subclasses.add(child)
-                    work.append(child)
-        return list(subclasses)
-
     @property
     def cli(self):
         """Base command group to load subcommands into."""
         @click.group(context_settings=self.context_settings)
         def fn():
             """Manage Fan Cult exclusive content."""
-            pass
         # Dynamically load commands from content type classes
         for type_ in self._types:
             fn.add_command(type_(self).cli, type_.command)
