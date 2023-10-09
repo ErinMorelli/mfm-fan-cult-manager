@@ -17,6 +17,7 @@ along with this program.  If not, see [https://www.gnu.org/licenses/].
 
 import os
 import re
+import time
 from math import ceil
 from textwrap import shorten, TextWrapper
 
@@ -24,7 +25,9 @@ import pytz
 import click
 from tqdm import tqdm
 from dateutil import parser
+from mutagen.mp3 import MP3
 from bs4 import BeautifulSoup
+from urllib.request import urlretrieve
 from tabulate import tabulate, tabulate_formats
 
 from sqlalchemy.sql import or_
@@ -95,6 +98,11 @@ class MinisodeContent(FanCultContent):
         about = soup.find('div', class_='home-about')
         script = soup.find_all('script', src='')[1]
 
+        # Get audio file data
+        audio_url = re.search(r'm4a: "(.+)"', str(script)).group(1).strip()
+        filename, headers = urlretrieve(audio_url)
+        audio = MP3(filename)
+
         # Return the new episode object
         return self.model(
             title=ep_title,
@@ -102,7 +110,10 @@ class MinisodeContent(FanCultContent):
             date=self._get_episode_date(ep),
             url=ep_url,
             image=about.img['src'].strip(),
-            audio=re.search(r'm4a: "(.+)"', str(script)).group(1).strip()
+            audio=audio_url,
+            duration=audio.info.length,
+            size=int(headers.get('Content-Length')),
+            filetype=headers.get('Content-Type'),
         )
 
     def _find_episode(self, title, url):
@@ -163,10 +174,8 @@ class MinisodeContent(FanCultContent):
 
         # Create entries for episodes
         for episode in episodes:
-            # Get audio file details
-            res = self.session.head(episode.audio)
-            audio_type = res.headers.get('Content-Type')
-            audio_length = res.headers.get('Content-Length')
+            duration = time.strftime('%H:%M:%S', time.gmtime(episode.duration))
+            length = str(episode.size).encode()
 
             # Create the RSS entry
             fe = fg.add_entry()
@@ -177,7 +186,9 @@ class MinisodeContent(FanCultContent):
             fe.link(href=episode.url)
             fe.podcast.itunes_author('Exactly Right')
             fe.podcast.itunes_image(episode.image)
-            fe.enclosure(episode.audio, audio_length, audio_type)
+            fe.podcast.itunes_duration(duration)
+            fe.podcast.itunes_summary(episode.description)
+            fe.enclosure(episode.audio, length, episode.filetype)
 
         # Print the XML
         if print_:
@@ -201,6 +212,9 @@ class MinisodeContent(FanCultContent):
             Column('url', URLType, nullable=False),
             Column('image', URLType, nullable=False),
             Column('audio', URLType, nullable=False),
+            Column('duration', Integer, nullable=False),
+            Column('size', Integer, nullable=False),
+            Column('filetype', String, nullable=False),
             Column('last_updated', DateTime, server_default=func.now(),
                    onupdate=func.now(), nullable=False),
         )
@@ -208,12 +222,13 @@ class MinisodeContent(FanCultContent):
     @staticmethod
     def format_episode_list(episodes, fmt='psql'):
         """Create a formatted list of episodes."""
-        fields = ['ID', 'Title', 'Description', 'Date', 'URL']
+        fields = ['ID', 'Date', 'Title', 'Description', 'Duration', 'URL']
         table_data = [[
             episode.minisode_id,
             episode.date.strftime('%d %B %Y'),
             episode.title,
             shorten(episode.description, width=50),
+            time.strftime('%M:%S', time.gmtime(episode.duration)),
             shorten(episode.url, width=50)
         ] for episode in episodes]
         return tabulate(table_data, fields, tablefmt=fmt)
@@ -234,7 +249,7 @@ class MinisodeContent(FanCultContent):
                       help='List any newly added minisodes')
         @self.auto_login_user()
         def fn(list_):
-            """Updates the the list of minisodes."""
+            """Updates the list of minisodes."""
             new_episodes = self._update_episodes()
             # Check for results
             if not new_episodes:

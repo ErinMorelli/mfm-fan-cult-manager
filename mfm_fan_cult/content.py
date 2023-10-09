@@ -166,6 +166,7 @@ class FanCultContent:
             fg.podcast.itunes_author(self.copyright['name'])
             fg.podcast.itunes_owner(**self.copyright)
             fg.podcast.itunes_image(self.logo)
+            fg.podcast.itunes_explicit('no')
         return fg
 
     def _get_download_dir(self, dest, account, with_model=True):
