@@ -39,6 +39,7 @@ setup(
         'click',
         'cryptography',
         'feedgen',
+        'mutagen',
         'passlib',
         'python-dateutil',
         'pytz',
