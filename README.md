@@ -2,7 +2,7 @@
 
 A CLI tool for viewing and downloading MFM Fan Cult exclusive content.
 
-[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ErinMorelli_mfm-fan-cult-manager&metric=alert_status)](https://sonarcloud.io/dashboard?id=ErinMorelli_mfm-fan-cult-manager)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=ErinMorelli_mfm-fan-cult-manager&metric=alert_status)](https://sonarcloud.io/dashboard?id=ErinMorelli_mfm-fan-cult-manager) [![CodeFactor](https://www.codefactor.io/repository/github/erinmorelli/mfm-fan-cult-manager/badge/mainline)](https://www.codefactor.io/repository/github/erinmorelli/mfm-fan-cult-manager/overview/mainline)
 
 ---
 ### Installation
