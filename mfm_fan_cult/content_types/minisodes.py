@@ -98,8 +98,12 @@ class MinisodeContent(FanCultContent):
         about = soup.find('div', class_='home-about')
         script = soup.find_all('script', src='')[1]
 
-        # Get audio file data
+        # Get audio file URL
         audio_url = re.search(r'm4a: "(.+)"', str(script)).group(1).strip()
+        if not audio_url.startswith('http'):
+            return None
+
+        # Parse auto file data
         filename, headers = urlretrieve(audio_url)
         audio = MP3(filename)
 
