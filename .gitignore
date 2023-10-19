@@ -2,7 +2,8 @@
 build/
 dist/
 *.egg-info/
-
+*.pyc
+*._*
 environ.sh
 test.py
 *.xml
